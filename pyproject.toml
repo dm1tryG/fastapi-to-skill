@@ -1,0 +1,40 @@
+[project]
+name = "fastapi-to-skill"
+version = "0.1.0"
+description = "Convert FastAPI apps and OpenAPI specs into CLI tools and AI agent skills (SKILL.md)"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Dmitrii Galkin" }]
+keywords = ["fastapi", "openapi", "cli", "skill", "ai-agent", "mcp", "typer"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Code Generators",
+    "Framework :: FastAPI",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "typer>=0.9.0",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "jinja2>=3.1",
+    "httpx>=0.24",
+    "rich>=13.0",
+]
+
+[project.scripts]
+fastapi-to-skill = "fastapi_to_skill.main:app"
+
+[project.optional-dependencies]
+fastapi = ["fastapi>=0.100"]
+dev = ["pytest>=7.0", "ruff>=0.1.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["fastapi_to_skill"]
+
+[tool.ruff]
+line-length = 120

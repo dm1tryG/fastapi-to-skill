@@ -1,0 +1,113 @@
+---
+name: {{ spec.title | slugify }}
+description: {{ spec.description | oneline | truncate(1024) or ("CLI skill with " ~ (spec.endpoints | length) ~ " commands for " ~ spec.title) }}
+version: "1.0.0"
+license: MIT-0
+metadata:
+  openclaw:
+    emoji: "🔌"
+    homepage: "{{ spec.base_url }}"
+    requires:
+      bins:
+        - python3
+{% if env_vars %}
+      env:
+{% for var in env_vars %}
+        - {{ var }}
+{% endfor %}
+{% endif %}
+{% if env_vars %}
+    primaryEnv: {{ env_vars[0] }}
+{% endif %}
+    install:
+      - kind: uv
+        package: typer
+        bins: []
+      - kind: uv
+        package: httpx
+        bins: []
+      - kind: uv
+        package: rich
+        bins: []
+---
+
+# {{ spec.title }}
+
+{{ spec.description }}
+
+## Setup
+
+Install CLI dependencies:
+```bash
+pip install typer httpx rich
+```
+{% if spec.auth_schemes %}
+
+## Authentication
+{% for auth in spec.auth_schemes %}
+{% if auth.type == "apiKey" %}
+Set your API key:
+```bash
+export {{ env_prefix }}_API_KEY="your-api-key"
+```
+{% elif auth.type == "http" %}
+Set your token:
+```bash
+export {{ env_prefix }}_TOKEN="your-token"
+```
+{% endif %}
+{% endfor %}
+{% endif %}
+
+## Base URL
+
+```bash
+export {{ env_prefix }}_BASE_URL="{{ spec.base_url }}"
+```
+
+## Usage
+
+Run the CLI tool:
+```bash
+python cli.py <command> [arguments] [options]
+```
+
+Search for commands:
+```bash
+python cli.py search "<query>"
+```
+
+## Available Commands ({{ spec.endpoints | length }})
+{% for tag, endpoints in endpoints_by_tag.items() %}
+
+### {{ tag }}
+{% for ep in endpoints %}
+
+#### `{{ ep.operation_id | replace('_', '-') }}`
+{{ ep.summary }}
+
+- **{{ ep.method }}** `{{ ep.path }}`
+{% if ep.parameters %}
+- Parameters:
+  {% for p in ep.parameters %}
+  - `{{ p.name }}` ({{ p.location }}{% if p.required %}, required{% endif %}, {{ p.type_str }}){% if p.description %} — {{ p.description }}{% endif %}
+
+  {% endfor %}
+{% endif %}
+{% if ep.request_body %}
+- Request body: `{{ ep.request_body.content_type }}`{% if ep.request_body.description %} — {{ ep.request_body.description }}{% endif %}
+
+{% endif %}
+- Example:
+  ```bash
+  python cli.py {{ ep.operation_id | replace('_', '-') }}{% for p in ep.parameters if p.location == "path" %} <{{ p.name }}>{% endfor %}{% for p in ep.parameters if p.location == "query" %} --{{ p.name | replace('_', '-') }} value{% endfor %}{% if ep.request_body %} --body '{"key": "value"}'{% endif %}
+
+  ```
+{% endfor %}
+{% endfor %}
+
+## Search Commands
+
+```bash
+python cli.py search "your query"
+```

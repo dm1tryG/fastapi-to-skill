@@ -1,0 +1,78 @@
+---
+name: {{ spec.title | slugify }}
+description: {{ spec.description | oneline | truncate(1024) or ("CLI skill with " ~ (spec.endpoints | length) ~ " commands for " ~ spec.title) }}
+allowed-tools: Bash
+{% if spec.auth_schemes %}
+argument-hint: [command] [args...]
+{% endif %}
+---
+
+# {{ spec.title }}
+
+{{ spec.description }}
+
+## Setup
+
+Install CLI dependencies:
+```bash
+pip install typer httpx rich
+```
+{% if spec.auth_schemes %}
+
+## Authentication
+
+Before using this skill, configure authentication:
+{% for auth in spec.auth_schemes %}
+{% if auth.type == "apiKey" %}
+```bash
+export {{ env_prefix }}_API_KEY="your-api-key"
+```
+{% elif auth.type == "http" %}
+```bash
+export {{ env_prefix }}_TOKEN="your-token"
+```
+{% endif %}
+{% endfor %}
+{% endif %}
+
+## Base URL
+
+```bash
+export {{ env_prefix }}_BASE_URL="{{ spec.base_url }}"
+```
+
+## Instructions
+
+You have access to a CLI tool at `${CLAUDE_SKILL_DIR}/cli.py` that interacts with the **{{ spec.title }}** API.
+
+To run any command:
+```bash
+python ${CLAUDE_SKILL_DIR}/cli.py <command> [arguments] [options]
+```
+
+To discover available commands by keyword:
+```bash
+python ${CLAUDE_SKILL_DIR}/cli.py search "<query>"
+```
+
+## Available Commands ({{ spec.endpoints | length }})
+{% for tag, endpoints in endpoints_by_tag.items() %}
+
+### {{ tag }}
+{% for ep in endpoints %}
+- `{{ ep.operation_id | replace('_', '-') }}` — {{ ep.summary }} (`{{ ep.method }} {{ ep.path }}`)
+{%- for p in ep.parameters if p.location == "path" %} `<{{ p.name }}>`{% endfor %}
+{%- for p in ep.parameters if p.location == "query" %} `--{{ p.name | replace('_', '-') }}`{% endfor %}
+{%- if ep.request_body %} `--body '{...}'`{% endif %}
+
+{% endfor %}
+{% endfor %}
+
+## Examples
+{% for ep in spec.endpoints[:5] %}
+
+```bash
+python ${CLAUDE_SKILL_DIR}/cli.py {{ ep.operation_id | replace('_', '-') }}{% for p in ep.parameters if p.location == "path" %} <{{ p.name }}>{% endfor %}{% for p in ep.parameters if p.location == "query" %} --{{ p.name | replace('_', '-') }} value{% endfor %}{% if ep.request_body %} --body '{"key": "value"}'{% endif %}
+
+```
+{% endfor %}
