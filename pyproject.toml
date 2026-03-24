@@ -1,10 +1,12 @@
 [project]
 name = "fastapi-to-skill"
-version = "0.1.2"
+version = "0.1.3"
 description = "Convert FastAPI apps and OpenAPI specs into CLI tools and AI agent skills (SKILL.md)"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Dmitrii Galkin" }]
+readme = "README.md"
+urls = { Homepage = "https://github.com/dm1tryG/fastapi-to-skill" }
 keywords = ["fastapi", "openapi", "cli", "skill", "ai-agent", "mcp", "typer"]
 classifiers = [
     "Development Status :: 3 - Alpha",
