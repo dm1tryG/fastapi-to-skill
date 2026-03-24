@@ -29,6 +29,48 @@ def _make_operation_id(method: str, path: str) -> str:
     return _slugify(f"{method}_{path}")
 
 
+def _shorten_operation_id(op_id: str, method: str) -> str:
+    """Shorten auto-generated FastAPI operationIds.
+
+    Examples:
+      list_tasks_tasks_get       → list_tasks
+      create_task_tasks_post     → create_task
+      get_task_tasks_task_id_get → get_task
+      delete_task_tasks_task_id_delete → delete_task
+    """
+    # 1. Remove trailing HTTP method suffix
+    method_lower = method.lower()
+    if op_id.endswith(f"_{method_lower}"):
+        op_id = op_id[: -len(f"_{method_lower}")]
+
+    # 2. Split into parts and remove consecutive duplicates
+    parts = op_id.split("_")
+    deduped = []
+    for part in parts:
+        if not deduped or part != deduped[-1]:
+            deduped.append(part)
+
+    # 3. Find where the "semantic" prefix ends and the path echo begins.
+    # FastAPI appends the full path slugified after the function name.
+    # Stop when we see a word already seen, or its plural/singular variant.
+    def _is_seen(word: str, seen: set[str]) -> bool:
+        return (
+            word in seen
+            or word.rstrip("s") in seen  # tasks → task
+            or f"{word}s" in seen        # task → tasks
+        )
+
+    seen: set[str] = set()
+    result = []
+    for part in deduped:
+        if _is_seen(part, seen):
+            break
+        seen.add(part)
+        result.append(part)
+
+    return "_".join(result) if result else "_".join(deduped)
+
+
 def _resolve_ref(ref: str, spec: dict) -> dict:
     """Resolve a $ref pointer one level (e.g. '#/components/schemas/User')."""
     if not ref.startswith("#/"):
@@ -160,6 +202,7 @@ def parse_spec(raw: dict) -> APISpec:
 
             op_id = operation.get("operationId") or _make_operation_id(method, path)
             op_id = _slugify(op_id)
+            op_id = _shorten_operation_id(op_id, method)
 
             # Handle collisions
             base_id = op_id

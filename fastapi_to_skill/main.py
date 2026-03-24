@@ -8,7 +8,7 @@ import typer
 from rich import print as rprint
 
 from . import __version__
-from .generators import SkillTarget, generate_cli, generate_skill
+from .generators import SkillTarget, generate_cli, generate_pyproject, generate_skill
 from .parser import parse_spec
 from .spec_loader import load_spec
 
@@ -69,19 +69,25 @@ def generate(
     # Generate
     cli_path = generate_cli(api_spec, output)
     skill_path = generate_skill(api_spec, output, target=target)
+    pyproject_path = generate_pyproject(api_spec, output)
 
     # Save spec copy
     output.mkdir(parents=True, exist_ok=True)
     spec_path = output / "openapi.json"
     spec_path.write_text(json.dumps(raw, indent=2, ensure_ascii=False), encoding="utf-8")
 
+    import re
+    cmd_name = re.sub(r"[^a-zA-Z0-9]+", "-", api_spec.title).strip("-").lower()
+
     rprint(f"\n[green]Generated ({target}):[/green]")
     rprint(f"  {cli_path}")
     rprint(f"  {skill_path}")
     rprint(f"  {spec_path}")
+    rprint(f"  {pyproject_path}")
     rprint(f"\n[bold]Next steps:[/bold]")
-    rprint(f"  pip install typer httpx rich")
-    rprint(f"  python {cli_path} --help")
+    rprint(f"  cd {output} && pip install -e .")
+    rprint(f"  {cmd_name}              # shows SKILL.md")
+    rprint(f"  {cmd_name} --help       # lists all commands")
 
 
 @app.command()
