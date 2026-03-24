@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source .venv/bin/activate)",
+      "Bash(twine upload:*)",
+      "Read(//Users/dmitriigalkin-hs/projects/demo-api/**)",
+      "Bash(fastapi-to-skill generate:*)",
+      "Bash(task-manager-api --help)",
+      "Bash(task-manager-api)"
+    ]
+  }
+}

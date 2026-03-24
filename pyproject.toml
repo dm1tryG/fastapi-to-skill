@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-to-skill"
-version = "0.1.1"
+version = "0.1.2"
 description = "Convert FastAPI apps and OpenAPI specs into CLI tools and AI agent skills (SKILL.md)"
 requires-python = ">=3.10"
 license = "MIT"

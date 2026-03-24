@@ -23,6 +23,27 @@ def _escape_quotes(text: str) -> str:
     return text.replace('"', '\\"').replace("\n", " ")
 
 
+def _body_schema_help(schema: dict) -> str:
+    """Render a JSON schema into a readable body description for docstrings."""
+    if not schema:
+        return ""
+    props = schema.get("properties", {})
+    required = set(schema.get("required", []))
+    if not props:
+        return ""
+    lines = ["Body fields:"]
+    for name, field in props.items():
+        ftype = field.get("type", "any")
+        if ftype == "array":
+            inner = field.get("items", {}).get("type", "any")
+            ftype = f"list[{inner}]"
+        req = " (required)" if name in required else ""
+        default = f"  default: {field['default']}" if "default" in field else ""
+        desc = f"  — {field['description']}" if field.get("description") else ""
+        lines.append(f"  {name}: {ftype}{req}{default}{desc}")
+    return "\\n".join(lines)
+
+
 def _python_repr(value) -> str:
     if value is None:
         return "None"
@@ -44,6 +65,7 @@ def generate_cli(spec: APISpec, output_dir: Path) -> Path:
     env.filters["slugify"] = _slugify
     env.filters["escape_quotes"] = _escape_quotes
     env.filters["python_repr"] = _python_repr
+    env.filters["body_schema_help"] = _body_schema_help
 
     template = env.get_template("cli.py.jinja2")
 

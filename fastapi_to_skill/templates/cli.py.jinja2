@@ -35,7 +35,10 @@ def main(ctx: typer.Context):
             ctx.get_help()
         raise typer.Exit(0)
 
-BASE_URL = os.getenv("{{ env_prefix }}_BASE_URL", "{{ spec.base_url }}")
+_default_base_url = "{{ spec.base_url }}"
+if not _default_base_url or _default_base_url in ("https://localhost", "http://localhost", "/"):
+    _default_base_url = "http://localhost:8000"
+BASE_URL = os.getenv("{{ env_prefix }}_BASE_URL", _default_base_url)
 {% if spec.auth_schemes %}
 {% for auth in spec.auth_schemes %}
 {% if auth.type == "apiKey" %}
@@ -92,7 +95,7 @@ def {{ ep.operation_id }}(
     body: str = typer.Option(None, "--body", help="JSON request body"),
     {% endif %}
 ):
-    """{{ ep.summary | escape_quotes }}{% if ep.description %} — {{ ep.description | escape_quotes }}{% endif %}"""
+    """{{ ep.summary | escape_quotes }}{% if ep.description %} — {{ ep.description | escape_quotes }}{% endif %}{% if ep.request_body and ep.request_body.schema_dict %}\n\n{{ ep.request_body.schema_dict | body_schema_help }}{% endif %}"""
     path = "{{ ep.path }}"
     {% for p in ep.parameters if p.location == "path" %}
     path = path.replace("{{ '{' }}{{ p.name }}{{ '}' }}", str({{ p.name }}))
