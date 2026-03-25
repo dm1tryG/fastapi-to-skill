@@ -1,5 +1,9 @@
 # fastapi-to-skill
 
+[![PyPI version](https://img.shields.io/pypi/v/fastapi-to-skill)](https://pypi.org/project/fastapi-to-skill/)
+[![GitHub stars](https://img.shields.io/github/stars/dm1tryG/fastapi-to-skill)](https://github.com/dm1tryG/fastapi-to-skill)
+[![Author](https://img.shields.io/badge/author-Dmitrii%20Galkin-blue)](https://github.com/dm1tryG)
+
 > Convert any FastAPI app or OpenAPI spec into a CLI + SKILL.md for AI agents — in one command.
 
 ![From API Chaos to Agent Skills](https://raw.githubusercontent.com/dm1tryG/fastapi-to-skill/main/assets/cover-problem.png)
