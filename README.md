@@ -2,14 +2,14 @@
 
 > Convert any FastAPI app or OpenAPI spec into a CLI + SKILL.md for AI agents — in one command.
 
-![From API Chaos to Agent Skills](assets/cover-problem.png)
+![From API Chaos to Agent Skills](https://raw.githubusercontent.com/dm1tryG/fastapi-to-skill/main/assets/cover-problem.png)
 
 ```bash
 pip install fastapi-to-skill
 fastapi-to-skill generate main:app -o ./skills/myapi/
 ```
 
-![One Command. Agent-Ready.](assets/cover-pipeline.png)
+![One Command. Agent-Ready.](https://raw.githubusercontent.com/dm1tryG/fastapi-to-skill/main/assets/cover-pipeline.png)
 
 ---
 
