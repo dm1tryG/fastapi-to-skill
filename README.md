@@ -134,13 +134,6 @@ task-manager-api list-tasks --done false
 task-manager-api search "task"
 ```
 
-### Generate from an OpenAPI spec file
-
-```bash
-fastapi-to-skill generate --spec openapi.json -o ./skills/myapi/
-fastapi-to-skill generate --spec openapi.yaml -o ./skills/myapi/
-```
-
 ### Choose target platform
 
 ```bash

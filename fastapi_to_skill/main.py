@@ -20,23 +20,18 @@ app = typer.Typer(
 
 @app.command()
 def generate(
-    app_path: Optional[str] = typer.Argument(None, help="FastAPI app path, e.g. myapp:app"),
-    spec: Optional[Path] = typer.Option(None, "--spec", "-s", help="Path to OpenAPI spec (JSON/YAML)"),
+    app_path: str = typer.Argument(..., help="FastAPI app path, e.g. myapp:app"),
     output: Path = typer.Option("./skills/", "-o", "--output", help="Output directory"),
     target: SkillTarget = typer.Option("claude-code", "--target", "-t", help="Skill target: claude-code or openclaw"),
     base_url: Optional[str] = typer.Option(None, "--base-url", help="Override API base URL"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview without writing files"),
     validate: bool = typer.Option(False, "--validate", help="Validate spec only, do not generate"),
 ):
-    """Generate CLI + SKILL.md from a FastAPI app or OpenAPI spec."""
-    if not app_path and not spec:
-        rprint("[red]Error:[/red] Provide either a FastAPI app path (e.g. myapp:app) or --spec path.")
-        raise typer.Exit(1)
-
+    """Generate CLI + SKILL.md from a FastAPI app."""
     # Load
     rprint("[blue]Loading spec...[/blue]")
     try:
-        raw = load_spec(app_path=app_path, spec_path=spec)
+        raw = load_spec(app_path)
     except Exception as e:
         rprint(f"[red]Failed to load spec:[/red] {e}")
         raise typer.Exit(1)
