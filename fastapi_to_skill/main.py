@@ -34,7 +34,7 @@ def generate(
         raise typer.Exit(1)
 
     # Load
-    rprint(f"[blue]Loading spec...[/blue]")
+    rprint("[blue]Loading spec...[/blue]")
     try:
         raw = load_spec(app_path=app_path, spec_path=spec)
     except Exception as e:
@@ -57,11 +57,11 @@ def generate(
         raise typer.Exit(0)
 
     if dry_run:
-        rprint(f"\n[yellow]Dry run — would generate:[/yellow]")
+        rprint("\n[yellow]Dry run — would generate:[/yellow]")
         rprint(f"  {output / 'cli.py'}")
         rprint(f"  {output / 'SKILL.md'} ({target})")
         rprint(f"  {output / 'openapi.json'}")
-        rprint(f"\n[yellow]Commands:[/yellow]")
+        rprint("\n[yellow]Commands:[/yellow]")
         for ep in api_spec.endpoints:
             rprint(f"  {ep.operation_id.replace('_', '-'):30s}  {ep.method:6s} {ep.path}")
         raise typer.Exit(0)
@@ -84,7 +84,7 @@ def generate(
     rprint(f"  {skill_path}")
     rprint(f"  {spec_path}")
     rprint(f"  {pyproject_path}")
-    rprint(f"\n[bold]Next steps:[/bold]")
+    rprint("\n[bold]Next steps:[/bold]")
     rprint(f"  cd {output} && pip install -e .")
     rprint(f"  {cmd_name}              # shows SKILL.md")
     rprint(f"  {cmd_name} --help       # lists all commands")

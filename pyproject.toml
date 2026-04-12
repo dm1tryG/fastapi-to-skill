@@ -29,6 +29,8 @@ fastapi-to-skill = "fastapi_to_skill.main:app"
 
 [project.optional-dependencies]
 fastapi = ["fastapi>=0.100"]
+
+[dependency-groups]
 dev = ["pytest>=7.0", "ruff>=0.1.0"]
 
 [build-system]
