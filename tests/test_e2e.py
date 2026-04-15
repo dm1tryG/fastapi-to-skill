@@ -136,3 +136,113 @@ def test_full_pipeline_openclaw(petstore_spec, tmp_path):
     assert cli_path.exists()
     assert skill_path.exists()
     ast.parse(cli_path.read_text())
+
+
+# --- Complex spec tests ---
+
+
+def test_complex_cli_valid_python(complex_spec, tmp_path):
+    api = parse_spec(complex_spec)
+    cli_path = generate_cli(api, tmp_path)
+    code = cli_path.read_text()
+    ast.parse(code)
+
+
+def test_complex_cli_command_names(complex_spec, tmp_path):
+    api = parse_spec(complex_spec)
+    cli_path = generate_cli(api, tmp_path)
+    code = cli_path.read_text()
+    # Clean names, no path segments leaking
+    assert '"list-users"' in code
+    assert '"create-user"' in code
+    assert '"create-order"' in code
+    assert '"get-order"' in code
+    assert '"get-stats"' in code
+    # Should NOT have ugly suffixes
+    assert '"create-order-users"' not in code
+    assert '"get-stats-admin"' not in code
+
+
+def test_complex_cli_body_schema_enum(complex_spec, tmp_path):
+    api = parse_spec(complex_spec)
+    cli_path = generate_cli(api, tmp_path)
+    code = cli_path.read_text()
+    # Enum values should appear in docstring
+    assert "enum(" in code
+    assert "'admin'" in code
+    assert "'customer'" in code
+    assert "'seller'" in code
+
+
+def test_complex_cli_body_schema_nested(complex_spec, tmp_path):
+    api = parse_spec(complex_spec)
+    cli_path = generate_cli(api, tmp_path)
+    code = cli_path.read_text()
+    # Nested Address fields should appear
+    assert "street:" in code
+    assert "city:" in code
+    assert "Address" in code
+
+
+def test_complex_cli_query_and_body(complex_spec, tmp_path):
+    api = parse_spec(complex_spec)
+    cli_path = generate_cli(api, tmp_path)
+    code = cli_path.read_text()
+    # update_user should have both --notify and --body
+    assert '"--notify"' in code
+    assert '"--body"' in code
+
+
+def test_complex_skill_multiple_tags(complex_spec, tmp_path):
+    api = parse_spec(complex_spec)
+    skill_path = generate_skill(api, tmp_path, target="claude-code")
+    content = skill_path.read_text()
+    assert "### users" in content
+    assert "### orders" in content
+    assert "### admin" in content
+
+
+def test_complex_full_pipeline(complex_spec, tmp_path):
+    api = parse_spec(complex_spec)
+    cli_path = generate_cli(api, tmp_path)
+    skill_path = generate_skill(api, tmp_path, target="claude-code")
+    assert cli_path.exists()
+    assert skill_path.exists()
+    ast.parse(cli_path.read_text())
+
+
+# --- Codex target ---
+
+
+def test_generate_skill_codex(petstore_spec, tmp_path):
+    api = parse_spec(petstore_spec)
+    skill_path = generate_skill(api, tmp_path, target="codex")
+    assert skill_path.exists()
+    content = skill_path.read_text()
+    assert "Petstore" in content
+    assert "list-pets" in content
+    # Codex format: no frontmatter, no CLAUDE_SKILL_DIR
+    assert "---" not in content
+    assert "${CLAUDE_SKILL_DIR}" not in content
+    assert "openclaw" not in content.lower()
+    # Should have standard sections
+    assert "## Setup" in content
+    assert "## Available Commands" in content
+    assert "## Examples" in content
+
+
+def test_generate_skill_codex_auth(petstore_spec, tmp_path):
+    api = parse_spec(petstore_spec)
+    skill_path = generate_skill(api, tmp_path, target="codex")
+    content = skill_path.read_text()
+    assert "Authentication" in content
+    assert "PETSTORE_TOKEN" in content
+
+
+def test_full_pipeline_codex(petstore_spec, tmp_path):
+    api = parse_spec(petstore_spec)
+    cli_path = generate_cli(api, tmp_path)
+    skill_path = generate_skill(api, tmp_path, target="codex")
+    assert cli_path.exists()
+    assert skill_path.exists()
+    ast.parse(cli_path.read_text())

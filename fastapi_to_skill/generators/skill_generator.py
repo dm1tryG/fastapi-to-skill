@@ -11,7 +11,7 @@ from ..models import APISpec
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 
-SkillTarget = Literal["claude-code", "openclaw"]
+SkillTarget = Literal["claude-code", "openclaw", "codex"]
 
 
 def _slugify(text: str) -> str:

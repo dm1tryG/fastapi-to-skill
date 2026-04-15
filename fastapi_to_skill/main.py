@@ -22,7 +22,7 @@ app = typer.Typer(
 def generate(
     app_path: str = typer.Argument(..., help="FastAPI app path, e.g. myapp:app"),
     output: Path = typer.Option("./skills/", "-o", "--output", help="Output directory"),
-    target: SkillTarget = typer.Option("claude-code", "--target", "-t", help="Skill target: claude-code or openclaw"),
+    target: SkillTarget = typer.Option("claude-code", "--target", "-t", help="Skill target: claude-code, openclaw, or codex"),
     base_url: Optional[str] = typer.Option(None, "--base-url", help="Override API base URL"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview without writing files"),
     validate: bool = typer.Option(False, "--validate", help="Validate spec only, do not generate"),
