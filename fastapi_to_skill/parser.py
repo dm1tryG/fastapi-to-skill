@@ -29,41 +29,78 @@ def _make_operation_id(method: str, path: str) -> str:
     return _slugify(f"{method}_{path}")
 
 
-def _shorten_operation_id(op_id: str, method: str) -> str:
+def _shorten_operation_id(op_id: str, method: str, path: str = "") -> str:
     """Shorten auto-generated FastAPI operationIds.
+
+    Uses the URL path to detect where the function name ends and the path
+    echo begins, so nested routes like ``/users/{user_id}/orders`` keep
+    clean names (``create_order`` instead of ``create_order_users``).
 
     Examples:
       list_tasks_tasks_get       → list_tasks
       create_task_tasks_post     → create_task
       get_task_tasks_task_id_get → get_task
       delete_task_tasks_task_id_delete → delete_task
+      create_order_users_user_id_orders_post → create_order
+      get_stats_admin_stats_get → get_stats
+      ban_user_admin_users_user_id_ban_delete → ban_user
     """
     # 1. Remove trailing HTTP method suffix
     method_lower = method.lower()
     if op_id.endswith(f"_{method_lower}"):
         op_id = op_id[: -len(f"_{method_lower}")]
 
-    # 2. Split into parts and remove consecutive duplicates
+    # 2. Build a set of path segment words to detect the path echo.
+    #    e.g. /users/{user_id}/orders → {"users", "user", "id", "orders"}
+    path_words: set[str] = set()
+    if path:
+        for segment in path.strip("/").split("/"):
+            segment = re.sub(r"[{}]", "", segment)
+            for word in segment.split("_"):
+                if word:
+                    path_words.add(word.lower())
+
+    # 3. Split into parts and remove consecutive duplicates
     parts = op_id.split("_")
     deduped = []
     for part in parts:
         if not deduped or part != deduped[-1]:
             deduped.append(part)
 
-    # 3. Find where the "semantic" prefix ends and the path echo begins.
-    # FastAPI appends the full path slugified after the function name.
-    # Stop when we see a word already seen, or its plural/singular variant.
-    def _is_seen(word: str, seen: set[str]) -> bool:
+    # 4. Find where the "semantic" prefix ends and the path echo begins.
+    def _is_variant(word: str, seen: set[str]) -> bool:
         return (
             word in seen
             or word.rstrip("s") in seen  # tasks → task
             or f"{word}s" in seen        # task → tasks
         )
 
+    # Build path segment names (full segments, not individual words).
+    # e.g. /users/{user_id}/orders → ["users", "user_id", "orders"]
+    path_segments: list[str] = []
+    if path:
+        for segment in path.strip("/").split("/"):
+            cleaned = re.sub(r"[{}]", "", segment)
+            if cleaned:
+                path_segments.append(cleaned.lower())
+
     seen: set[str] = set()
     result = []
-    for part in deduped:
-        if _is_seen(part, seen):
+    for i, part in enumerate(deduped):
+        # When we have path info: stop as soon as we find a sequence of
+        # parts that matches the start of the path segments.
+        # e.g. deduped = [create, order, users, user, id, orders]
+        #      path_segments = [users, user_id, orders]
+        # At "users" (index 2), remaining = [users, user, id, orders]
+        # joined remainder starts with path content → stop here.
+        if path_segments:
+            remaining = "_".join(deduped[i:])
+            first_seg = path_segments[0]
+            if remaining.startswith(first_seg) and len(result) >= 2:
+                break
+
+        # Fallback: old heuristic for when no path is provided
+        if not path_segments and _is_variant(part, seen):
             break
         seen.add(part)
         result.append(part)
@@ -87,6 +124,71 @@ def _resolve_schema(schema: dict, spec: dict) -> dict:
     if "$ref" in schema:
         return _resolve_ref(schema["$ref"], spec)
     return schema
+
+
+def _deep_resolve_schema(schema: dict, spec: dict, *, _depth: int = 0) -> dict:
+    """Recursively resolve $ref, anyOf, and allOf so the schema is self-contained.
+
+    Resolves up to 5 levels deep to avoid infinite recursion with circular refs.
+    """
+    if _depth > 5:
+        return schema
+
+    # Resolve top-level $ref
+    if "$ref" in schema:
+        resolved = _resolve_ref(schema["$ref"], spec)
+        # Preserve fields from the referencing schema (e.g. default)
+        merged = {**resolved}
+        for key, val in schema.items():
+            if key != "$ref":
+                merged[key] = val
+        schema = merged
+        return _deep_resolve_schema(schema, spec, _depth=_depth + 1)
+
+    result = dict(schema)
+
+    # Handle anyOf / oneOf — pick the first non-null type
+    for combiner in ("anyOf", "oneOf"):
+        if combiner in result:
+            variants = result[combiner]
+            non_null = [v for v in variants if v.get("type") != "null"]
+            if non_null:
+                resolved_variant = _deep_resolve_schema(non_null[0], spec, _depth=_depth + 1)
+                # Merge the resolved variant into the result
+                for key, val in resolved_variant.items():
+                    if key not in result or key in ("type", "properties", "enum", "items", "required"):
+                        result[key] = val
+            del result[combiner]
+
+    # Handle allOf — merge all schemas
+    if "allOf" in result:
+        merged_props: dict = {}
+        merged_required: list = []
+        for sub in result["allOf"]:
+            resolved_sub = _deep_resolve_schema(sub, spec, _depth=_depth + 1)
+            merged_props.update(resolved_sub.get("properties", {}))
+            merged_required.extend(resolved_sub.get("required", []))
+            for key, val in resolved_sub.items():
+                if key not in ("properties", "required"):
+                    result.setdefault(key, val)
+        if merged_props:
+            result["properties"] = merged_props
+        if merged_required:
+            result["required"] = merged_required
+        del result["allOf"]
+
+    # Recurse into properties
+    if "properties" in result:
+        resolved_props = {}
+        for prop_name, prop_schema in result["properties"].items():
+            resolved_props[prop_name] = _deep_resolve_schema(prop_schema, spec, _depth=_depth + 1)
+        result["properties"] = resolved_props
+
+    # Recurse into array items
+    if result.get("type") == "array" and "items" in result:
+        result["items"] = _deep_resolve_schema(result["items"], spec, _depth=_depth + 1)
+
+    return result
 
 
 def _map_type(schema: dict, spec: dict) -> str:
@@ -128,7 +230,7 @@ def _parse_request_body(body: dict, spec: dict) -> RequestBody | None:
     for content_type in ("application/json", "multipart/form-data", "application/x-www-form-urlencoded"):
         if content_type in content:
             schema = content[content_type].get("schema", {})
-            schema = _resolve_schema(schema, spec)
+            schema = _deep_resolve_schema(schema, spec)
             return RequestBody(
                 content_type=content_type,
                 schema_dict=schema,
@@ -202,7 +304,7 @@ def parse_spec(raw: dict) -> APISpec:
 
             op_id = operation.get("operationId") or _make_operation_id(method, path)
             op_id = _slugify(op_id)
-            op_id = _shorten_operation_id(op_id, method)
+            op_id = _shorten_operation_id(op_id, method, path)
 
             # Handle collisions
             base_id = op_id

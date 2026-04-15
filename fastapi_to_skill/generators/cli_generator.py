@@ -23,7 +23,26 @@ def _escape_quotes(text: str) -> str:
     return text.replace('"', '\\"').replace("\n", " ")
 
 
-def _body_schema_help(schema: dict) -> str:
+def _schema_type_str(field: dict) -> str:
+    """Get a human-readable type string from a resolved JSON Schema field."""
+    # Enum
+    if "enum" in field:
+        values = ", ".join(repr(v) for v in field["enum"])
+        return f"enum({values})"
+    ftype = field.get("type", "any")
+    # Nested object with properties
+    if ftype == "object" and "properties" in field:
+        title = field.get("title", "object")
+        return title
+    # Array
+    if ftype == "array":
+        items = field.get("items", {})
+        inner = _schema_type_str(items)
+        return f"list[{inner}]"
+    return ftype
+
+
+def _body_schema_help(schema: dict, *, _indent: int = 0) -> str:
     """Render a JSON schema into a readable body description for docstrings."""
     if not schema:
         return ""
@@ -31,16 +50,21 @@ def _body_schema_help(schema: dict) -> str:
     required = set(schema.get("required", []))
     if not props:
         return ""
-    lines = ["Body fields:"]
+    prefix = "  " * _indent
+    lines = []
+    if _indent == 0:
+        lines.append("Body fields:")
     for name, field in props.items():
-        ftype = field.get("type", "any")
-        if ftype == "array":
-            inner = field.get("items", {}).get("type", "any")
-            ftype = f"list[{inner}]"
+        ftype = _schema_type_str(field)
         req = " (required)" if name in required else ""
         default = f"  default: {field['default']}" if "default" in field else ""
         desc = f"  — {field['description']}" if field.get("description") else ""
-        lines.append(f"  {name}: {ftype}{req}{default}{desc}")
+        lines.append(f"  {prefix}{name}: {ftype}{req}{default}{desc}")
+        # Show nested object fields inline (one level)
+        if field.get("type") == "object" and "properties" in field and _indent < 1:
+            nested = _body_schema_help(field, _indent=_indent + 1)
+            if nested:
+                lines.append(nested)
     return "\\n".join(lines)
 
 
