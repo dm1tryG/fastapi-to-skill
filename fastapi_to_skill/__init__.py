@@ -1,3 +1,3 @@
-"""fastapi-to-skill: Convert FastAPI apps and OpenAPI specs into CLI tools and AI agent skills."""
+"""fastapi-to-skill: Convert FastAPI apps into Agent Skills (CLI + SKILL.md)."""
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
