@@ -1,7 +1,7 @@
 [project]
 name = "fastapi-to-skill"
 version = "0.1.6"
-description = "Convert FastAPI apps and OpenAPI specs into CLI tools and AI agent skills (SKILL.md)"
+description = "Convert FastAPI apps into Agent Skills (CLI + SKILL.md)"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Dmitrii Galkin" }]

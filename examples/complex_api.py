@@ -11,7 +11,7 @@ Stress-tests fastapi-to-skill generation with:
 - Endpoints without explicit operation_id
 
 Generate CLI + SKILL.md:
-    fastapi-to-skill generate examples.complex_api:app -o ./skills/complex-api/
+    fastapi-to-skill generate examples.complex_api:app
 """
 from enum import Enum
 from typing import Optional
