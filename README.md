@@ -4,13 +4,13 @@
 [![GitHub stars](https://img.shields.io/github/stars/dm1tryG/fastapi-to-skill)](https://github.com/dm1tryG/fastapi-to-skill)
 [![Author](https://img.shields.io/badge/author-Dmitrii%20Galkin-blue)](https://github.com/dm1tryG)
 
-> Convert any FastAPI app or OpenAPI spec into a CLI + SKILL.md for AI agents — in one command.
+> Convert any FastAPI app into a CLI + SKILL.md for AI agents — in one command.
 
 ![From API Chaos to Agent Skills](https://raw.githubusercontent.com/dm1tryG/fastapi-to-skill/main/assets/cover-problem.png)
 
 ```bash
 pip install fastapi-to-skill
-fastapi-to-skill generate main:app -o ./skills/myapi/
+fastapi-to-skill generate main:app
 ```
 
 ![One Command. Agent-Ready.](https://raw.githubusercontent.com/dm1tryG/fastapi-to-skill/main/assets/cover-pipeline.png)
@@ -31,14 +31,12 @@ The new distribution channel is not the App Store. It's the agent skill registry
 
 ## The Solution
 
-`fastapi-to-skill` takes your existing FastAPI app (or any OpenAPI spec) and generates everything an AI agent needs to use your API:
+`fastapi-to-skill` takes your existing FastAPI app and generates everything an AI agent needs to use your API:
 
 | Output | What it is |
 |--------|-----------|
 | `cli.py` | Standalone Typer CLI — one command per endpoint, no deps on this tool |
-| `SKILL.md` | Universal skill file for Claude Code, OpenClaw, and any Agent Skills-compatible platform |
-| `openapi.json` | Copy of the spec for reference |
-| `pyproject.toml` | Install the CLI as a named command (`pip install -e .`) |
+| `SKILL.md` | Agent Skills file — works in Claude Code and any Agent Skills-compatible platform |
 
 **No MCP server. No AI costs. No infrastructure. Just files.**
 
@@ -95,53 +93,41 @@ def get_task(task_id: int):
 ```
 
 ```bash
-fastapi-to-skill generate main:app -o ./skills/task-manager/
+fastapi-to-skill generate main:app
 ```
 
-Output:
+Output (folder name is derived from your API title):
 ```
-skills/task-manager/
-├── cli.py          ← standalone CLI
-├── SKILL.md        ← agent skill file
-├── openapi.json    ← spec copy
-└── pyproject.toml  ← install as named command
+skills/task-manager-api/
+├── cli.py      ← standalone CLI
+└── SKILL.md    ← agent skill file
 ```
 
-### Install and use the generated CLI
+### Use the generated CLI
 
 ```bash
-cd skills/task-manager/
-pip install -e .
+cd skills/task-manager-api/
+pip install typer httpx rich
 
 # Run without a command — shows SKILL.md (AI-friendly)
-task-manager-api
+python cli.py
 
 # List all commands
-task-manager-api --help
+python cli.py --help
 
 # See body schema for any command
-task-manager-api create-task --help
+python cli.py create-task --help
 # Body fields:
 #   title: string (required)
 #   done: boolean  default: False
 
 # Call the API
-task-manager-api create-task --body '{"title": "Ship the feature"}'
-task-manager-api get-task 1
-task-manager-api list-tasks --done false
+python cli.py create-task --body '{"title": "Ship the feature"}'
+python cli.py get-task 1
+python cli.py list-tasks --done false
 
 # Search commands by keyword
-task-manager-api search "task"
-```
-
-### Choose target platform
-
-```bash
-# Claude Code (default)
-fastapi-to-skill generate main:app -t claude-code
-
-# OpenClaw
-fastapi-to-skill generate main:app -t openclaw
+python cli.py search "task"
 ```
 
 ### Other options
@@ -190,7 +176,7 @@ task-manager-api create-task --help  # sees body schema
 
 No human needed. The agent discovers capabilities, reads the contract, and starts calling commands.
 
-The `SKILL.md` follows the [Agent Skills open standard](https://agentskills.io) — compatible with Claude Code, OpenClaw, and any platform that supports it.
+The `SKILL.md` follows the [Agent Skills open standard](https://agentskills.io) — compatible with Claude Code and any platform that supports it.
 
 ---
 

@@ -1,11 +1,11 @@
 """Example FastAPI app: simple task manager.
 
 Generate CLI + SKILL.md:
-    fastapi-to-skill generate examples.task_manager:app -o ./skills/task-manager/
+    fastapi-to-skill generate examples.task_manager:app
 
-Install and use:
-    cd skills/task-manager && pip install -e .
-    task-manager-api --help
+Use:
+    cd skills/task-manager-api && pip install typer httpx rich
+    python cli.py --help
 """
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel

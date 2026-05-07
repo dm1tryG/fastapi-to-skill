@@ -3,15 +3,13 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Literal
 
 from jinja2 import Environment, FileSystemLoader
 
 from ..models import APISpec
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
-
-SkillTarget = Literal["claude-code", "openclaw"]
+TEMPLATE_NAME = "skill.md.jinja2"
 
 
 def _slugify(text: str) -> str:
@@ -52,12 +50,8 @@ def _get_env_vars(spec: APISpec, env_prefix: str) -> list[str]:
     return env_vars
 
 
-def _template_name(target: SkillTarget) -> str:
-    return f"skill.{target}.md.jinja2"
-
-
-def generate_skill(spec: APISpec, output_dir: Path, target: SkillTarget = "claude-code") -> Path:
-    """Generate a SKILL.md file from an APISpec for the given target platform."""
+def generate_skill(spec: APISpec, output_dir: Path) -> Path:
+    """Generate a SKILL.md file from an APISpec in the Agent Skills format."""
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES_DIR)),
         keep_trailing_newline=True,
@@ -68,7 +62,7 @@ def generate_skill(spec: APISpec, output_dir: Path, target: SkillTarget = "claud
     env.filters["oneline"] = _oneline
     env.filters["truncate"] = _truncate
 
-    template = env.get_template(_template_name(target))
+    template = env.get_template(TEMPLATE_NAME)
 
     prefix = _env_prefix(spec.title)
     result = template.render(
